@@ -12,12 +12,21 @@ dotenv.config()
 
 
 const app = express()
-app.use(
-    cors({
-      origin: "https://task-management-client-black.vercel.app/",
-      credentials: true,
-    })
-  );app.use(express.json())
+// app.use(
+//     cors({
+//       origin: "https://task-management-client-black.vercel.app/",
+//       credentials: true,
+//       methods: "GET,POST,PUT,DELETE",
+//     })
+//   );
+
+  app.use(cors({
+    origin: "https://task-management-client-black.vercel.app/",
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  }));
+  
+  app.use(express.json())
 app.use(cookieParser());
 
 
