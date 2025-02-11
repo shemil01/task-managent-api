@@ -21,7 +21,7 @@ const app = express()
 //   );
 
   app.use(cors({
-    origin: "https://task-management-client-black.vercel.app/",
+    origin: "https://task-management-client-black.vercel.app",
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   }));
