@@ -26,7 +26,7 @@ exports.userTask = async (req,res) => {
       message: "User not found the specified id",
     });
   } 
-    res.status(201).json(task);
+    res.status(201).json({task,userData});
   
 }
 exports.editUser = async (req, res) => {
