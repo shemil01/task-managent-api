@@ -1,11 +1,11 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");    
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 exports.register = async (req, res) => {
   const { name, email, password, role } = req.body;
-  console.log(req.body)
+  console.log(req.body);
 
   if (!name || !email || !password || !role) {
     return res.status(400).json({ message: "All feilds are required" });
@@ -28,21 +28,35 @@ exports.register = async (req, res) => {
     role,
   });
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "2h",
-  });
-  res.cookie("token", token, {
+  const accessToken = jwt.sign(
+    { id: user._id },
+    process.env.ACCES_TOKEN_SECRET,
+    {
+      expiresIn: "2h",
+    }
+  );
+
+  const refreshToken = jwt.sign(
+    { id: user._id },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: "1d",
+    }
+  );
+  res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: true,
     sameSite: "None",
   });
+  res.cookie("refreshToken", refreshToken);
 
-  res.status(201).json({ message: "User registered successfully",user,token });
+  res
+    .status(201)
+    .json({ message: "User registered successfully", user, accessToken });
 };
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
-
 
   if (!email || !password) {
     return res.status(400).send("Please fill all fields");
@@ -65,26 +79,64 @@ exports.login = async (req, res) => {
     });
   }
 
-  const token = jwt.sign({ id: isUserExist._id }, process.env.JWT_SECRET);
+  const accessToken = jwt.sign(
+    { id: isUserExist._id },
+    process.env.ACCES_TOKEN_SECRET,
+    {
+      expiresIn: "2h",
+    }
+  );
+  const refreshToken = jwt.sign(
+    { id: isUserExist._id },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: "1d",
+    }
+  );
 
-  res.cookie("token", token, {
+  res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: true,
     sameSite: "None",
   });
+  res.cookie("refreshToken", refreshToken);
+
   res.status(200).json({
-    userData:isUserExist,
+    userData: isUserExist,
     token,
     message: "Login successfull",
   });
 };
 
-exports.viewProfile = async (req,res) => {
-  const userId = req.user.id
-  const user = await User.findById(userId)
+exports.refresh = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).send("Login your account");
+  }
 
-  res.json(user)
-}
+  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: "invalid refresh token" });
+    } else {
+      const accessToken = jwt.sign(
+        { id: decoded._id },
+        process.env.ACCES_TOKEN_SECRET,
+        {
+          expiresIn: "2h",
+        }
+      );
+      return res
+      .cookie("token", token, {
+        expires: new Date(Date.now() + 60 * 60 * 1000),  
+      })
+      .send("Refresh token generated");
+    }
+  });
+};
 
+exports.viewProfile = async (req, res) => {
+  const userId = req.user.id;
+  const user = await User.findById(userId);
 
-
+  res.json(user);
+};
